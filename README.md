@@ -6,7 +6,7 @@
 <img width="318" height="159" alt="image" src="https://github.com/user-attachments/assets/782fbc1c-5c2f-49c9-9aae-4adb868e72dd" />
 
 
-## ✅ 목표
+## 목표
 - CI/CD 개념과 Jenkins 파이프라인 구조 이해
 - 실제 레포를 이용해 Jenkins 파이프라인을 작성, 빌드, 배포를 수행
 
@@ -14,18 +14,18 @@
 
 ## 개념 정리
 
-### 📌 Jenkins 이란?
+### Jenkins 이란?
 오픈소스 자동화 서버로, 빌드(Build), 테스트(Test), 배포(Deploy) 등 소프트웨어 개발의 반복적인 과정을 **자동화할 수 있는 도구** <br>
 개발자가 수동으로 하던 작업을 자동으로 연결하고 실행하게 해주는 플랫폼
 
 
-### 📌 GitHub Webhook 이란?
+### GitHub Webhook 이란?
 **외부 서버로 이벤트 알림을 보내는 자동 연결 장치** <br>
 GitHub 저장소에서 특정 이벤트(예: Push, Pull Request, Issue 등)가 발생했을 때, 설정된 URL(서버 또는 서비스)로 HTTP POST 요청을 보내 외부 시스템과 자동으로 통신하게 하는 역할
 
 
 
-### 📌 ngrok 이란?
+### ngrok 이란?
 로컬(내 PC나 개발 서버)에서 실행 중인 애플리케이션을 공개 인터넷에서 접근할 수 있는 **임시 도메인(터널)을 제공하는 도구**
 외부 네트워크에서 직접 접근할 수 없는 개발 환경을 **인터넷에 안전하게 노출시키는** 서비스
 
@@ -304,7 +304,7 @@ done
 ---
 
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### 일반적인 문제와 해결책
 
