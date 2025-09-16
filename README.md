@@ -26,6 +26,7 @@ GitHub Webhook은 특정 이벤트가 발생 시 다른 URL로 API 호출을 할
 5. **자동화 성공 이후 무중단 배포를 위해 추가 설정을 한다.**
 
 ## Jenkins에 Github Webhook 빌드 설정
+   <img width="869" height="230" alt="image" src="https://github.com/user-attachments/assets/04760750-65ef-48bd-8498-1b67e134878b" />
 
 - 빌드에서 해야하는 일은 소스코드를 저장소에서 pull 받고 해당 소스코드의 의존성을 다운로드 받은 후, 애플리케이션으로 바로 실행할 수 있도록 jar파일로 묶는 행위가 포함
 
