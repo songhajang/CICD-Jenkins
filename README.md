@@ -35,14 +35,76 @@ GitHub 저장소에서 특정 이벤트(예: Push, Pull Request, Issue 등)가 �
 
 1. **ngrok 다운로드 및 설치**
    ```bash
-   # Windows (C포 파이프라인 |
-|------------------|--------------|
-| ![jenkins_build](https://github.com/user-attachments/assets/c4ad2d96-f1c7-4e9a-b4d9-50189ea046c1) | ![deploy (1)](https://github.com/user-attachments/assets/f4281031-73fd-4c12-8eb8-9475f2514a5f)|
+   # Windows (Chocolatey 사용)
+   choco install ngrok
+
+   # 또는 공식 사이트에서 다운로드
+   # https://ngrok.com/download
+   ```
+
+2. **ngrok 계정 생성 및 인증**
+   ```bash
+   # ngrok 계정 생성 후 authtoken 설정
+   ngrok config add-authtoken YOUR_AUTHTOKEN
+   ```
+
+3. **로컬 서버 터널링**
+   <img width="1457" height="697" alt="image" src="https://github.com/user-attachments/assets/45133c13-cdca-4397-aebc-7edeb8884b25" />
+
+   ```bash
+   # Jenkins가 8080 포트에서 실행 중일 때
+   ngrok http 8080
+
+   # 또는 특정 포트 지정
+   ngrok http 8080 --subdomain=my-jenkins
+   ```
+
+5. **ngrok URL 확인**
+   - ngrok 실행 후 제공되는 `https://xxxxx.ngrok.io` URL을 GitHub Webhook 설정에 사용
 
 
+---
+
+## 🛠 자동화 구축 시나리오
+
+1. **GitHub Webhook 활성화**  
+코드 변경 발생 시 Jenkins로 API 요청 전송  
+
+2. **소스 다운로드 및 빌드**  
+Jenkins가 해당 리포지토리에 접근하여 소스를 다운로드  
+Gradle/Maven 빌드를 통해 **JAR 파일 생성**  
+
+3. **자동 배포**  
+생성된 JAR 파일을 서버에 자동 배포  
+
+4. **환경 설정**  
+애플리케이션 실행 포트를 **8083**으로 변경하여 실행 환경에 맞춤  
+
+5. **테스트 및 모니터링**  
+빌드/배포 과정을 실시간 모니터링  
+  로그 검증 및 정상 동작 여부 확인  
 
 
-## 1. 아키택처
+---
+
+# 초기 과정
+
+## 1. github webhook 등록
+   <img width="869" height="230" alt="image" src="https://github.com/user-attachments/assets/04760750-65ef-48bd-8498-1b67e134878b" />
+
+- 빌드에서 해야하는 일은 소스코드를 저장소에서 pull 받고 해당 소스코드의 의존성을 다운로드 받은 후, 애플리케이션으로 바로 실행할 수 있도록 jar파일로 묶는 행위가 포함
+- 위 과정을 빌드에서 수행해주면 배포될 인스턴스가 여러개 있어도 소스코드와 의존성을 다운로드 받는 과정은 오직 한 번만 이루어 지면 됨
+
+## 2. 새로운 item 등록
+
+| 2-1. 해당 링크의<br> 리포지토리 복사 | 2-2. 복사한 리포지토리 링크<br> jenkins item 에 gitHub project 에 등록 | 2-3. 자동화 파이프라인 스크립트 추가 |
+|---------|---------|---------|
+| <img src="https://github.com/user-attachments/assets/abfc4b94-6fbc-45bd-8a7c-1a4b66f2f2b6" width="441" height="320" /> | <img src="https://github.com/user-attachments/assets/f759dd8f-121c-4689-9503-d0ff0b1cee2d" width="660" height="320" />  | <img width="1269" height="662" alt="image" src="https://github.com/user-attachments/assets/b502bf88-71d2-4cf0-8fda-e0d686a3baf4" /> |
+
+
+# Maven 빌드 과정
+
+## 1. CI/CD Architecture
 
 <img width="827" height="444" alt="image" src="https://github.com/user-attachments/assets/a3928a0f-6696-4dc7-a328-abae1e5d2aea" />
 
@@ -240,52 +302,131 @@ java -jar /appjardir/app_20240916_133045.jar
 서버에서 Java 애플리케이션(`app_latest.jar`)을 자동으로 감시하고 배포하는 스크립트
 
 ```sh
-ubuntu@myserver00:~$ cat deploy.sh
-#!/bin/bash
-cd /appjardir
-echo "자동 배포 서비스 시작..."
-LAST_CHECK=0
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_DIR="${APP_DIR:-/home/ubuntu/appjardir}"
+PORT=8084
+JAR_LINK="app_latest.jar"
+CHECK_INTERVAL=5
+START_TIMEOUT=20
+JAVA_BIN="${JAVA_BIN:-java}"
+
+cd "$APP_DIR"
+
+ts() { date "+[%Y-%m-%d %H:%M:%S]"; }
+info() { echo "$(ts) $*"; }
+warn() { echo "$(ts) ⚠️  $*"; }
+err()  { echo "$(ts) ❌ $*" >&2; }
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+pids_on_port() {
+  if have lsof; then
+    lsof -t -iTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true
+  else
+    ss -ltnp 2>/dev/null | awk -v p=":${PORT}" '$4 ~ p {print $7}' \
+      | sed -n 's/.*pid=\([0-9]\+\).*/\1/p' | sort -u || true
+  fi
+}
+
+is_listening() {
+  if have lsof; then
+    lsof -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1
+  else
+    ss -ltn 2>/dev/null | grep -q ":${PORT} "
+  fi
+}
+
 kill_app() {
-    echo "기존 앱 완전 종료 시도..."
-    PID_PORT=$(lsof -t -i:8084 2>/dev/null)
-    if [ ! -z "$PID_PORT" ]; then
-        echo "포트 8084 사용 중인 PID: $PID_PORT 종료"
-        kill $PID_PORT
-        sleep 2
-        kill -9 $PID_PORT 2>/dev/null
-    fi
-    pkill -f "java.*app_latest.jar"
-    rm -f app.pid
-    echo ":흰색_확인_표시: 종료 완료"
+  info "기존 앱 종료 시도..."
+  local pid_list
+  pid_list="$(pids_on_port)"
+  if [ -n "${pid_list}" ]; then
+    info "포트 ${PORT} 사용 PID: ${pid_list} 종료"
+    kill ${pid_list} 2>/dev/null || true
+    sleep 2
+    pid_list="$(pids_on_port)"
+    [ -n "${pid_list}" ] && { warn "잔존 PID 강제 종료: ${pid_list}"; kill -9 ${pid_list} 2>/dev/null || true; }
+  fi
+  info "✅ 앱 종료 완료"
 }
+
 start_app() {
-    echo "새 앱 시작 중..."
-    java -jar app_latest.jar > app.log 2>&1 &
-    NEW_PID=$!
-    echo $NEW_PID > app.pid
-    echo ":흰색_확인_표시: 앱 시작됨 (PID: $NEW_PID)"
-}
-while true; do
-    if [ -f app_latest.jar ]; then
-        # 파일 수정 시간 가져오기 (초 단위)
-        CURRENT_TIME=$(stat -c %Y app_latest.jar)
-        if [ $CURRENT_TIME -gt $LAST_CHECK ]; then
-            echo "새로운 JAR 감지됨! ($(date -d @$CURRENT_TIME))"
-            kill_app
-            sleep 3
-            start_app
-            LAST_CHECK=$CURRENT_TIME
-        fi
+  if [ ! -f "$JAR_LINK" ]; then
+    err "$JAR_LINK 파일이 없습니다."; return 1
+  fi
+
+  info "새 앱 시작 중..."
+  nohup "$JAVA_BIN" -jar "$JAR_LINK" --server.port="$PORT" >/dev/null 2>&1 &
+  local new_pid=$!
+  sleep 2
+
+  local waited=0
+  until is_listening; do
+    sleep 1
+    waited=$((waited+1))
+    if [ "$waited" -ge "$START_TIMEOUT" ]; then
+      err "앱 시작 실패 (포트 ${PORT} 미개방). PID=$new_pid"
+      return 1
     fi
-    sleep 5  # 5초마다 체크
+  done
+
+  info "✅ 앱이 성공적으로 시작됨 (PID: $new_pid)"
+  info "✅ 포트 ${PORT}에서 서비스 중"
+}
+
+# ---------------------------
+# 서비스 루프
+# ---------------------------
+info "✅ 🚀 자동 배포 서비스 시작"
+info "모니터링 대상: ${JAR_LINK}"
+info "포트: ${PORT}"
+info "체크 주기: ${CHECK_INTERVAL}초"
+
+last_mtime=0
+prev_file=""
+
+if [ -f "$JAR_LINK" ]; then
+  last_mtime="$(stat -c %Y "$JAR_LINK")"
+  prev_file="$(readlink -f "$JAR_LINK")"
+  kill_app
+  start_app || warn "초기 시작 실패. 다음 변경 감지 대기."
+else
+  warn "${JAR_LINK} 없음 — 생성/갱신 대기 중."
+fi
+
+while true; do
+  if [ -f "$JAR_LINK" ]; then
+    current_mtime="$(stat -c %Y "$JAR_LINK" 2>/dev/null || echo 0)"
+    if [ "$current_mtime" -gt "$last_mtime" ]; then
+      info "🔄 새로운 JAR 파일 감지! ($(date -d @"$current_mtime" "+%Y-%m-%d %H:%M:%S"))"
+
+      # 이전 파일 삭제
+      if [ -n "$prev_file" ] && [ -f "$prev_file" ] && [ "$prev_file" != "$(readlink -f "$JAR_LINK")" ]; then
+        warn "이전 JAR 삭제: $prev_file"
+        rm -f "$prev_file"
+      fi
+
+      kill_app
+      if start_app; then
+        last_mtime="$current_mtime"
+        prev_file="$(readlink -f "$JAR_LINK")"
+      else
+        err "배포 실패 — 롤백 없음."
+      fi
+    fi
+  fi
+  sleep "$CHECK_INTERVAL"
 done
-~
 
 ```
+
 ### 기능 설명
-**1. 자동 JAR 감지**
+**1. 자동 JAR 감지 및 배포**
 - `/appjardir` 폴더 내 `app_latest.jar` 파일의 변경 여부를 주기적으로 확인
 - 새 버전이 올라오면 자동으로 배포 프로세스 시작
+- 새로운 JAR 파일이 감지되고 배포가 성공하면, 이전 버전의 JAR 파일을 자동으로 삭제하여 디스크 공간을 관리
 
 **2. 기존 앱 안전 종료**
 - 포트 8084에서 실행 중인 기존 프로세스를 확인하고 종료
@@ -302,7 +443,6 @@ done
 - 서버에 수동 배포 없이 항상 최신 버전 실행 유지
 
 ---
-
 
 ## Troubleshooting
 
