@@ -199,7 +199,7 @@ pipeline {
 
 | Jenkins 빌드 화면 | 실행 결과 GIF |
 |------------------|--------------|
-| ![jenkins_build](https://github.com/user-attachments/assets/c4ad2d96-f1c7-4e9a-b4d9-50189ea046c1) | ![ezgif-8f959a8261ea3f](https://github.com/user-attachments/assets/3b16e16c-1bbd-4403-a33b-899056ec8e99) |
+| ![jenkins_build](https://github.com/user-attachments/assets/c4ad2d96-f1c7-4e9a-b4d9-50189ea046c1) | ![deploy (1)](https://github.com/user-attachments/assets/f4281031-73fd-4c12-8eb8-9475f2514a5f)|
 
 
 
