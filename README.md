@@ -205,14 +205,15 @@ pipeline {
 
 | Variable | Value | Description |
 |----------|-------|-------------|
-| `DEST_DIR` | `/opt/builds` | 빌드 결과물이 저장되는 호스트 디렉토리 |
+| `DEST_DIR` | `/appjardir` | 빌드 결과물이 저장되는 호스트 디렉토리 |
 | `TZ` | `Asia/Seoul` | 한국 표준시 설정 |
-| `JAVA_HOME` | `/usr/lib/jvm/java-17-openjdk-amd64` | Java 17 설치 경로 |
+| `JAVA_HOME` | `/opt/java/openjdk` | Java 17 설치 경로 |
 | `PATH` | `${JAVA_HOME}/bin:${PATH}` | Java 17을 PATH에 추가 |
 
 ## bind mount 파일 구조
 
 빌드 완료 후 `/opt/builds/` 디렉토리 구조
+<img width="408" height="77" alt="image" src="https://github.com/user-attachments/assets/7a4f2d43-e2e7-40f5-a1d7-c56a221d3095" />
 
 ```
 /opt/builds/
