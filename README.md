@@ -1,6 +1,6 @@
 # CI/CD Jenkins
 ![Jenkins](https://img.shields.io/badge/Jenkins-Built%20with-blue?logo=jenkins&logoColor=white)
-![ngrok](https://img.shields.io/badge/ngrok-Tunnel-orange?logo=ngrok&logoColor=white)
+![ngrok](https://img.shields.io/badge/ngrok-Turnnel-orange?logo=ngrok&logoColor=white)
 ![Spring](https://img.shields.io/badge/Spring-Boot-green?logo=spring&logoColor=white)
 
 <img width="318" height="159" alt="image" src="https://github.com/user-attachments/assets/782fbc1c-5c2f-49c9-9aae-4adb868e72dd" />
