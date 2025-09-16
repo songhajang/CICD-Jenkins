@@ -6,7 +6,7 @@
 <img width="318" height="159" alt="image" src="https://github.com/user-attachments/assets/782fbc1c-5c2f-49c9-9aae-4adb868e72dd" />
 
 
-## 목표
+## ✅ 목표
 - CI/CD 개념과 Jenkins 파이프라인 구조 이해
 - 실제 레포를 이용해 Jenkins 파이프라인을 작성, 빌드, 배포를 수행
 
@@ -14,19 +14,19 @@
 
 ## 개념 정리
 
-### Jenkins 이란?
-> 오픈소스 자동화 서버로, 빌드(Build), 테스트(Test), 배포(Deploy) 등 소프트웨어 개발의 반복적인 과정을 **자동화할 수 있는 도구**
+### 📌 Jenkins 이란?
+오픈소스 자동화 서버로, 빌드(Build), 테스트(Test), 배포(Deploy) 등 소프트웨어 개발의 반복적인 과정을 **자동화할 수 있는 도구** <br>
 개발자가 수동으로 하던 작업을 자동으로 연결하고 실행하게 해주는 플랫폼
 
 
-### GitHub Webhook 이란?
-> **외부 서버로 이벤트 알림을 보내는 자동 연결 장치**
+### 📌 GitHub Webhook 이란?
+**외부 서버로 이벤트 알림을 보내는 자동 연결 장치** <br>
 GitHub 저장소에서 특정 이벤트(예: Push, Pull Request, Issue 등)가 발생했을 때, 설정된 URL(서버 또는 서비스)로 HTTP POST 요청을 보내 외부 시스템과 자동으로 통신하게 하는 역할
 
 
 
-### ngrok 이란?
-> 로컬(내 PC나 개발 서버)에서 실행 중인 애플리케이션을 공개 인터넷에서 접근할 수 있는 **임시 도메인(터널)을 제공하는 도구**
+### 📌 ngrok 이란?
+로컬(내 PC나 개발 서버)에서 실행 중인 애플리케이션을 공개 인터넷에서 접근할 수 있는 **임시 도메인(터널)을 제공하는 도구**
 외부 네트워크에서 직접 접근할 수 없는 개발 환경을 **인터넷에 안전하게 노출시키는** 서비스
 
 
@@ -105,6 +105,106 @@ Gradle/Maven 빌드를 통해 **JAR 파일 생성**
 # Maven 빌드 과정
 
 ## 1. CI/CD Architecture
+<img width="718" height="451" alt="image" src="https://github.com/user-attachments/assets/88232e62-89a3-4fdb-ae0a-d1ab2d4f3b37" />
+
+
+1. **Github 에서 jenkins로 API요청이 오면 해당 리포지토리로 접근해 소스를 다운받고 JAR파일로 만들고 배포하도록 설정한다.**
+2. **Github Webhook 기능을 활성화 시킨다.**
+3. **애플리케이션의 포트를 8080포트로 변경시킨다.**
+4. **테스트해보면서 log 기록 확인한다.**
+
+## 2. Pipeline Script 코드
+
+```groovy
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/ChatHongPT/ci-cd-test.git'
+                echo 'Pull 성공'
+            }
+        }
+
+        stage('Build (Maven Wrapper)') {
+            steps {
+                dir('CI_CD_OS_maven') {
+                    bat '.\\mvnw.cmd -B clean package -DskipTests'
+                }
+            }
+        }
+
+        stage('Check JAR') {
+            steps {
+                dir('CI_CD_OS_maven') {
+                    echo '✅ 빌드된 JAR 파일 확인 (Windows dir)'
+                    bat 'dir /-C target\\*.jar || echo JAR 파일이 없습니다!'
+                }
+            }
+        }
+
+        stage('Archive') {
+            steps {
+                dir('CI_CD_OS_maven') {
+                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                }
+            }
+        }
+    }
+}
+```
+
+### Stage 별 설명
+
+**1. Checkout**
+- `git branch: 'main'` → `main` 브랜치의 코드를 clone
+- 성공적으로 pull되면 **"Pull 성공"** 메시지를 출력
+
+**2. Build (Maven Wrapper)**
+- `CI_CD_OS_maven` 디렉토리로 이동한 뒤, Maven Wrapper(`mvnw.cmd`)를 실행 
+- 실행 명령어
+  ```bash
+  .\mvnw.cmd -B clean package -DskipTests
+  ```
+- B → 배치 모드(로그 최소화)
+- clean → 이전 빌드 산출물 삭제
+- package → 프로젝트 빌드 후 패키징(JAR 생성)
+- DskipTests → 테스트 실행 생략
+
+#### 3. Check JAR
+- target 디렉토리 내에 JAR 파일이 존재하는지 확인
+
+   ```bash
+   dir /-C target\*.jar
+   ```
+   JAR 파일이 없으면 "JAR 파일이 없습니다!" 메시지를 출력
+
+#### 4. Archive
+
+<img width="400" height="133" alt="image" src="https://github.com/user-attachments/assets/713667b3-ef4b-4fc8-8f22-e307871d61f3" />
+
+- target/*.jar 파일을 Jenkins 빌드 아티팩트로 저장
+- fingerprint: true 옵션을 통해 추적 가능성을 보장
+
+
+## 3. 빌드
+
+<img width="764" height="269" alt="image" src="https://github.com/user-attachments/assets/af7302ce-d194-4c2d-84c9-81bd55a0125a" />
+
+
+---
+
+# Gradle 실행 과정
+
+| Jenkins 빌드 화면 | 실행 결과 GIF |
+|------------------|--------------|
+| ![jenkins_build](https://github.com/user-attachments/assets/c4ad2d96-f1c7-4e9a-b4d9-50189ea046c1) | ![ezgif-8f959a8261ea3f](https://github.com/user-attachments/assets/3b16e16c-1bbd-4403-a33b-899056ec8e99) |
+
+
+
+
+## 1. 아키택처
 
 <img width="827" height="444" alt="image" src="https://github.com/user-attachments/assets/a3928a0f-6696-4dc7-a328-abae1e5d2aea" />
 
@@ -444,7 +544,8 @@ done
 
 ---
 
-## Troubleshooting
+
+## 🚨 Troubleshooting
 
 ### 일반적인 문제와 해결책
 
