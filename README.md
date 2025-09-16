@@ -6,13 +6,13 @@
 <img width="318" height="159" alt="image" src="https://github.com/user-attachments/assets/782fbc1c-5c2f-49c9-9aae-4adb868e72dd" />
 
 
-## ✅ 학습 목표
+## ✅ 목표
 - CI/CD 개념과 Jenkins 파이프라인 구조 이해
 - 실제 레포를 이용해 Jenkins 파이프라인을 작성, 빌드, 배포를 수행
 
 ---
 
-## 학습 개념
+## 개념 정리
 
 ### 📌 Jenkins 이란?
 오픈소스 자동화 서버로, 빌드(Build), 테스트(Test), 배포(Deploy) 등 소프트웨어 개발의 반복적인 과정을 **자동화할 수 있는 도구** <br>
@@ -72,7 +72,7 @@ GitHub 저장소에서 특정 이벤트(예: Push, Pull Request, Issue 등)가 �
 
 2. **소스 다운로드 및 빌드**  
 Jenkins가 해당 리포지토리에 접근하여 소스를 다운로드  
-Gradle 빌드를 통해 **JAR 파일 생성**  
+Gradle/Maven 빌드를 통해 **JAR 파일 생성**  
 
 3. **자동 배포**  
 생성된 JAR 파일을 서버에 자동 배포  
@@ -89,37 +89,34 @@ Gradle 빌드를 통해 **JAR 파일 생성**
 
 ---
 
-## 아키택처
+# 초기 과정
 
-<img width="827" height="444" alt="image" src="https://github.com/user-attachments/assets/a3928a0f-6696-4dc7-a328-abae1e5d2aea" />
-
-
-
-1. **CPU 바운드 애플리케이션을 로컬에서 수정한 후 Github에 push한다.**
-2. **Github Webhook이 동작해 jenkins에게 API 요청을 날린다.**
-3. **jenkins는 Github로부터 온 API 요청을 받아서 저장소의 소스코드를 다운받고 스프링 부트 프로젝트를 빌드하여 JAR파일로 만든다.**
-4. **jenkins가 JAR파일을 CPU 워커 인스턴스들에 배포하고 실행시킨다.**
-
-
-
----
-
-# Maven 실행 과정
-
-### 1. github webhook 등록
+## 1. github webhook 등록
    <img width="869" height="230" alt="image" src="https://github.com/user-attachments/assets/04760750-65ef-48bd-8498-1b67e134878b" />
 
 - 빌드에서 해야하는 일은 소스코드를 저장소에서 pull 받고 해당 소스코드의 의존성을 다운로드 받은 후, 애플리케이션으로 바로 실행할 수 있도록 jar파일로 묶는 행위가 포함
 - 위 과정을 빌드에서 수행해주면 배포될 인스턴스가 여러개 있어도 소스코드와 의존성을 다운로드 받는 과정은 오직 한 번만 이루어 지면 됨
 
-### 2. 새로운 item 등록
+## 2. 새로운 item 등록
 
 | 2-1. 해당 링크의 리포지토리 복사 | 2-2. 복사한 리포지토리 링크<br> jenkins item 에 gitHub project 에 등록 | 2-3. 자동화 파이프라인 스크립트 추가 |
 |---------|---------|---------|
 | <img src="https://github.com/user-attachments/assets/abfc4b94-6fbc-45bd-8a7c-1a4b66f2f2b6" width="441" height="320" /> | <img src="https://github.com/user-attachments/assets/f759dd8f-121c-4689-9503-d0ff0b1cee2d" width="660" height="320" />  | <img width="1269" height="662" alt="image" src="https://github.com/user-attachments/assets/b502bf88-71d2-4cf0-8fda-e0d686a3baf4" /> |
 
 
-#### Pipeline Script 코드
+# Maven 빌드 과정
+
+## 1. 아키택처
+
+<img width="827" height="473" alt="image" src="https://github.com/user-attachments/assets/07e26487-079b-437a-b32d-6dc5fbaec682" />
+
+1. **Github 에서 jenkins로 API요청이 오면 해당 리포지토리로 접근해 소스를 다운받고 JAR파일로 만들고 배포하도록 설정한다.**
+2. **Github Webhook 기능을 활성화 시킨다.**
+3. **애플리케이션의 포트를 8080포트로 변경시킨다.**
+4. **테스트해보면서 삽질한다.**
+5. **자동화 성공 이후 무중단 배포를 위해 추가 설정을 한다.**
+
+## 2. Pipeline Script 코드
 
 ```groovy
 pipeline {
@@ -161,10 +158,6 @@ pipeline {
 }
 ```
 
-### 3. 빌드
-
-<img width="764" height="269" alt="image" src="https://github.com/user-attachments/assets/af7302ce-d194-4c2d-84c9-81bd55a0125a" />
-
 ### Stage 별 설명
 
 **1. Checkout**
@@ -196,24 +189,30 @@ pipeline {
 
 - target/*.jar 파일을 Jenkins 빌드 아티팩트로 저장
 - fingerprint: true 옵션을 통해 추적 가능성을 보장
+
+
+## 3. 빌드
+
+<img width="764" height="269" alt="image" src="https://github.com/user-attachments/assets/af7302ce-d194-4c2d-84c9-81bd55a0125a" />
+
+
 ---
 
 # Gradle 실행 과정
 
+## 1. 아키택처
 
-## 환경변수 설정
+<img width="827" height="444" alt="image" src="https://github.com/user-attachments/assets/a3928a0f-6696-4dc7-a328-abae1e5d2aea" />
 
-| Variable | Value | Description |
-|----------|-------|-------------|
-| `DEST_DIR` | `/appjardir` | 빌드 결과물이 저장되는 호스트 디렉토리 |
-| `TZ` | `Asia/Seoul` | 한국 표준시 설정 |
-| `JAVA_HOME` | `/opt/java/openjdk` | Java 17 설치 경로 |
-| `PATH` | `${JAVA_HOME}/bin:${PATH}` | Java 17을 PATH에 추가 |
+1. **CPU 바운드 애플리케이션을 로컬에서 수정한 후 Github에 push한다.**
+2. **Github Webhook이 동작해 jenkins에게 API 요청을 날린다.**
+3. **jenkins는 Github로부터 온 API 요청을 받아서 저장소의 소스코드를 다운받고 스프링 부트 프로젝트를 빌드하여 JAR파일로 만든다.**
+4. **jenkins가 JAR파일을 CPU 워커 인스턴스들에 배포하고 실행시킨다.**
 
-## bind mount 파일 구조
+
+### bind mount 파일 구조
 
 빌드 완료 후 `/opt/builds/` 디렉토리 구조
-<img width="408" height="77" alt="image" src="https://github.com/user-attachments/assets/7a4f2d43-e2e7-40f5-a1d7-c56a221d3095" />
 
 ```
 /opt/builds/
@@ -222,7 +221,7 @@ pipeline {
 └── app_latest.jar → app_20240916_151512.jar  # 최신 버전 링크
 ```
 
-### Docker 환경 설정
+### 1. Docker 환경 설정
 
 1. **Java 17이 포함된 Jenkins 컨테이너 실행**:
 ```bash
@@ -248,8 +247,16 @@ docker run -d \
   jenkins/jenkins:lts
 ```
 
+## 2. Pipeline Script 코드
 
-### Pipeline Script 코드
+### 환경변수 설정
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `DEST_DIR` | `/appjardir` | 빌드 결과물이 저장되는 호스트 디렉토리 |
+| `TZ` | `Asia/Seoul` | 한국 표준시 설정 |
+| `JAVA_HOME` | `/opt/java/openjdk` | Java 17 설치 경로 |
+| `PATH` | `${JAVA_HOME}/bin:${PATH}` | Java 17을 PATH에 추가 |
 
 ```groovy
 pipeline {
@@ -343,7 +350,7 @@ pipeline {
   }
 }
 ```
-
+### Stage 별 설명
 
 **1. Checkout**
 - GitHub 저장소에서 소스코드를 Jenkins 워크스페이스로 cone
@@ -365,24 +372,26 @@ pipeline {
 
 
 
-### 빌드 상태 확인
+### 3. 빌드
+
 ```bash
 # 호스트에서 빌드 결과 확인
-ls -la /opt/builds/
+ls -la /appjardir
 
 # Jenkins 컨테이너에서 확인
-docker exec jenkins ls -la /opt/builds/
+docker exec jenkins ls -la /appjardir
 ```
 
-### 서비스 연동 예시
-<img width="755" height="43" alt="image" src="https://github.com/user-attachments/assets/f8af692a-15f7-4d30-8f32-5f401afa6851" />
+#### 서비스 연동 예시
+
+<img width="408" height="77" alt="image" src="https://github.com/user-attachments/assets/7a4f2d43-e2e7-40f5-a1d7-c56a221d3095" />
 
 ```bash
 # 최신 JAR로 서비스 실행
-java -jar /opt/builds/app_latest.jar
+java -jar /appjardir/app_latest.jar
 
 # 특정 버전으로 롤백
-java -jar /opt/builds/app_20240916_133045.jar
+java -jar /appjardir/app_20240916_133045.jar
 ```
 
 ## 🚨 Troubleshooting
