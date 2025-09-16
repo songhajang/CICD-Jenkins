@@ -105,13 +105,13 @@ Gradle/Maven 빌드를 통해 **JAR 파일 생성**
 # Maven 빌드 과정
 
 ## 1. 아키택처
+<img width="718" height="451" alt="image" src="https://github.com/user-attachments/assets/88232e62-89a3-4fdb-ae0a-d1ab2d4f3b37" />
 
-<img width="827" height="473" alt="image" src="https://github.com/user-attachments/assets/07e26487-079b-437a-b32d-6dc5fbaec682" />
 
 1. **Github 에서 jenkins로 API요청이 오면 해당 리포지토리로 접근해 소스를 다운받고 JAR파일로 만들고 배포하도록 설정한다.**
 2. **Github Webhook 기능을 활성화 시킨다.**
 3. **애플리케이션의 포트를 8080포트로 변경시킨다.**
-4. **테스트해보면서 삽질한다.**
+4. **테스트해보면서 log 기록 확인한다.**
 
 ## 2. Pipeline Script 코드
 
@@ -355,17 +355,17 @@ pipeline {
 - Branch: `main`
 
  **2.Build with Gradle**
-- Java 17 환경에서 Gradle 빌드를 실행합니다
-- 테스트를 제외하고 빌드하여 시간을 단축합니다
+- Java 17 환경에서 Gradle 빌드를 실행
+- 테스트를 제외하고 빌드하여 시간을 단축
 - `./gradlew clean build -x test`
 
  **3. Copy Jar to Build Directory**
-- 빌드된 JAR 파일을 호스트 볼륨으로 복사합니다
-- 타임스탬프 기반 버전 관리를 적용합니다
-- 최신 버전에 대한 심볼릭 링크를 생성합니다
+- 빌드된 JAR 파일을 호스트 볼륨으로 복사
+- 타임스탬프 기반 버전 관리를 적용
+- 최신 버전에 대한 심볼릭 링크를 생성
 
 **4. Archive Artifacts**
-- Jenkins 웹 UI에서 다운로드 가능하도록 아티팩트를 보관합니다
+- Jenkins 웹 UI에서 다운로드 가능하도록 아티팩트를 보관
 
 
 
