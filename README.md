@@ -97,7 +97,7 @@ Gradle/Maven 빌드를 통해 **JAR 파일 생성**
 
 ## 2. 새로운 item 등록
 
-| 2-1. 해당 링크의 리포지토리 복사 | 2-2. 복사한 리포지토리 링크<br> jenkins item 에 gitHub project 에 등록 | 2-3. 자동화 파이프라인 스크립트 추가 |
+| 2-1. 해당 링크의<br> 리포지토리 복사 | 2-2. 복사한 리포지토리 링크<br> jenkins item 에 gitHub project 에 등록 | 2-3. 자동화 파이프라인 스크립트 추가 |
 |---------|---------|---------|
 | <img src="https://github.com/user-attachments/assets/abfc4b94-6fbc-45bd-8a7c-1a4b66f2f2b6" width="441" height="320" /> | <img src="https://github.com/user-attachments/assets/f759dd8f-121c-4689-9503-d0ff0b1cee2d" width="660" height="320" />  | <img width="1269" height="662" alt="image" src="https://github.com/user-attachments/assets/b502bf88-71d2-4cf0-8fda-e0d686a3baf4" /> |
 
@@ -196,6 +196,13 @@ pipeline {
 ---
 
 # Gradle 실행 과정
+
+| Jenkins 빌드 화면 | 실행 결과 GIF |
+|------------------|--------------|
+| ![jenkins_build](https://github.com/user-attachments/assets/c4ad2d96-f1c7-4e9a-b4d9-50189ea046c1) | ![ezgif-8f959a8261ea3f](https://github.com/user-attachments/assets/3b16e16c-1bbd-4403-a33b-899056ec8e99) |
+
+
+
 
 ## 1. 아키택처
 
@@ -369,7 +376,7 @@ pipeline {
 
 
 
-### 4. 빌드
+## 4. 빌드
 
 ```bash
 # 호스트에서 빌드 결과 확인
@@ -391,7 +398,7 @@ java -jar /appjardir/app_latest.jar
 java -jar /appjardir/app_20240916_133045.jar
 ```
 
-### 5. 자동 배포
+## 5. 자동 배포
 서버에서 Java 애플리케이션(`app_latest.jar`)을 자동으로 감시하고 배포하는 스크립트
 
 ```sh
