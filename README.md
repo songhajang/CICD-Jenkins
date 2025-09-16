@@ -218,7 +218,7 @@ pipeline {
 └── app_latest.jar → app_20240916_151512.jar  # 최신 버전 링크
 ```
 
-### 1. Docker 환경 설정
+## 2. Docker 환경 설정
 
 1. **Java 17이 포함된 Jenkins 컨테이너 실행**:
 ```bash
@@ -244,7 +244,7 @@ docker run -d \
   jenkins/jenkins:lts
 ```
 
-## 2. Pipeline Script 코드
+## 3. Pipeline Script 코드
 
 ### 환경변수 설정
 
@@ -369,7 +369,7 @@ pipeline {
 
 
 
-### 3. 빌드
+### 4. 빌드
 
 ```bash
 # 호스트에서 빌드 결과 확인
@@ -390,6 +390,74 @@ java -jar /appjardir/app_latest.jar
 # 특정 버전으로 롤백
 java -jar /appjardir/app_20240916_133045.jar
 ```
+
+### 5. 자동 배포
+서버에서 Java 애플리케이션(`app_latest.jar`)을 자동으로 감시하고 배포하는 스크립트
+
+```sh
+ubuntu@myserver00:~$ cat deploy.sh
+#!/bin/bash
+cd /appjardir
+echo "자동 배포 서비스 시작..."
+LAST_CHECK=0
+kill_app() {
+    echo "기존 앱 완전 종료 시도..."
+    PID_PORT=$(lsof -t -i:8084 2>/dev/null)
+    if [ ! -z "$PID_PORT" ]; then
+        echo "포트 8084 사용 중인 PID: $PID_PORT 종료"
+        kill $PID_PORT
+        sleep 2
+        kill -9 $PID_PORT 2>/dev/null
+    fi
+    pkill -f "java.*app_latest.jar"
+    rm -f app.pid
+    echo ":흰색_확인_표시: 종료 완료"
+}
+start_app() {
+    echo "새 앱 시작 중..."
+    java -jar app_latest.jar > app.log 2>&1 &
+    NEW_PID=$!
+    echo $NEW_PID > app.pid
+    echo ":흰색_확인_표시: 앱 시작됨 (PID: $NEW_PID)"
+}
+while true; do
+    if [ -f app_latest.jar ]; then
+        # 파일 수정 시간 가져오기 (초 단위)
+        CURRENT_TIME=$(stat -c %Y app_latest.jar)
+        if [ $CURRENT_TIME -gt $LAST_CHECK ]; then
+            echo "새로운 JAR 감지됨! ($(date -d @$CURRENT_TIME))"
+            kill_app
+            sleep 3
+            start_app
+            LAST_CHECK=$CURRENT_TIME
+        fi
+    fi
+    sleep 5  # 5초마다 체크
+done
+~
+
+```
+### 기능 설명
+**1. 자동 JAR 감지**
+- `/appjardir` 폴더 내 `app_latest.jar` 파일의 변경 여부를 주기적으로 확인
+- 새 버전이 올라오면 자동으로 배포 프로세스 시작
+
+**2. 기존 앱 안전 종료**
+- 포트 8084에서 실행 중인 기존 프로세스를 확인하고 종료
+- 이전 버전 JAR를 실행 중인 Java 프로세스도 종료
+- 기존 앱 PID 기록(`app.pid`) 삭제
+
+**3. 새 앱 자동 시작**
+- 새 JAR 파일을 백그라운드에서 실행
+- 실행된 프로세스 PID를 `app.pid`에 기록
+- 표준 출력 및 오류 로그를 `app.log`에 기록
+
+**4. 주기적 감시**
+- 5초마다 JAR 파일 상태를 체크하여 변경 감지 시 자동 배포
+- 서버에 수동 배포 없이 항상 최신 버전 실행 유지
+
+---
+
 
 ## 🚨 Troubleshooting
 
