@@ -9,7 +9,7 @@ public class Controller {
 
 	@GetMapping("/get")
 	public String getFn() {
-		return "Get 방식 테스트입니당 :) 업데이트 테스트!!! 1";
+		return "Get 방식 테스트입니당 :) 업데이트 테스트!!! 2";
 	}
 	
 	@PostMapping("/post")
